@@ -34,6 +34,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.viewmodel.AuthViewModel
@@ -48,7 +49,6 @@ fun AuthScreen(
     val errorMessage by authViewModel.errorMessage.collectAsStateWithLifecycle()
     val networkErrorDetails by authViewModel.networkErrorDetails.collectAsStateWithLifecycle()
 
-    var isLoginMode by remember { mutableStateOf(true) }
     // Pre-populate with owner credentials as requested
     var emailInput by remember { mutableStateOf(AuthViewModel.OWNER_USERNAME) }
     var passwordInput by remember { mutableStateOf(AuthViewModel.OWNER_SECURITY_CODE) }
@@ -275,11 +275,7 @@ fun AuthScreen(
                 ),
                 keyboardActions = KeyboardActions(
                     onDone = {
-                        if (isLoginMode) {
-                            authViewModel.signIn(emailInput, passwordInput)
-                        } else {
-                            authViewModel.signUp(emailInput, passwordInput)
-                        }
+                        authViewModel.signIn(emailInput, passwordInput)
                     }
                 ),
                 singleLine = true,
@@ -300,11 +296,7 @@ fun AuthScreen(
             } else {
                 Button(
                     onClick = {
-                        if (isLoginMode) {
-                            authViewModel.signIn(emailInput, passwordInput)
-                        } else {
-                            authViewModel.signUp(emailInput, passwordInput)
-                        }
+                        authViewModel.signIn(emailInput, passwordInput)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -317,7 +309,7 @@ fun AuthScreen(
                     )
                 ) {
                     Text(
-                        text = if (isLoginMode) "ACTIVATE & OPERATE AGENT" else "REGISTER & CRAFT CODE",
+                        text = "ACTIVATE & OPERATE AGENT",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -346,20 +338,6 @@ fun AuthScreen(
                     )
                 }
 
-                TextButton(
-                    onClick = {
-                        isLoginMode = !isLoginMode
-                        authViewModel.clearError()
-                    },
-                    modifier = Modifier.testTag("auth_switch_mode_button")
-                ) {
-                    Text(
-                        text = if (isLoginMode) "Need to craft new credentials? Create Deck" else "Already have owner code? Access Gateway",
-                        color = MaterialTheme.colorScheme.secondary,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
                 OutlinedButton(
                     onClick = {
                         val finalEmail = if (emailInput.isNotBlank()) emailInput else AuthViewModel.OWNER_USERNAME
@@ -379,10 +357,70 @@ fun AuthScreen(
                     )
                 ) {
                     Text(
-                        text = "BYPASS GATEWAY (LOCAL OFFLINE SNEHASIS)",
+                        text = "OFFLINE GATEWAY ENTRY (SNEHASIS)",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold
                     )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Active • Optimize • Operate Capability Overview Card
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("gateway_capabilities_card"),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(
+                        text = "GATEWAY OPERATIONAL SCOPE",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp)) {
+                                Text("⚡ ACTIVE", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color(0xFF00E676))
+                                Text("6 Spaces Online & Telemetry", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp)) {
+                                Text("⚙️ OPTIMIZE", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color(0xFF29B6F6))
+                                Text("+195% SIP & -38% Burn Rate", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(8.dp)) {
+                                Text("🎮 OPERATE", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color(0xFFFFB300))
+                                Text("Voice Loop & Cyber Defense", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
                 }
             }
         }

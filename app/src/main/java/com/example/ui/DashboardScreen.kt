@@ -491,8 +491,415 @@ fun InteractiveAnalyticsChartCard() {
 }
 
 @Composable
+fun OmniGatewayOperationsCard(
+    spacesViewModel: SpacesViewModel,
+    onNavigateToChat: () -> Unit
+) {
+    val isAgentActive by spacesViewModel.isAgentActive.collectAsState()
+    val isOptimizing by spacesViewModel.isOptimizing.collectAsState()
+    val optimizationScore by spacesViewModel.optimizationScore.collectAsState()
+    val optimizationStatus by spacesViewModel.optimizationStatus.collectAsState()
+    val lastOperationResult by spacesViewModel.lastOperationResult.collectAsState()
+
+    var selectedTab by remember { mutableStateOf("Active") } // "Active", "Optimize", "Operate"
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("omni_gateway_operations_card"),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        shape = RoundedCornerShape(20.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Header with Gateway Title & Owner Badge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(if (isAgentActive) Color(0xFF00E676) else Color(0xFFFF5252))
+                    )
+                    Column {
+                        Text(
+                            text = "OMNI AGENT GATEWAY",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Owner: Snehasis • Control Deck",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Surface(
+                    color = if (isAgentActive) Color(0xFF00E676).copy(alpha = 0.15f) else Color(0xFFFF5252).copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = if (isAgentActive) "ACTIVE & ARMED" else "STANDBY",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isAgentActive) Color(0xFF00E676) else Color(0xFFFF5252),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // 3 Operational Mode Selector Tabs: [ACTIVE] [OPTIMIZE] [OPERATE]
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                val tabs = listOf(
+                    Triple("Active", Icons.Filled.Bolt, Color(0xFF00E676)),
+                    Triple("Optimize", Icons.Filled.Speed, Color(0xFF29B6F6)),
+                    Triple("Operate", Icons.Filled.PlayArrow, Color(0xFFFFB300))
+                )
+
+                tabs.forEach { (tabName, icon, tabColor) ->
+                    val isSelected = selectedTab == tabName
+                    Button(
+                        onClick = { selectedTab = tabName },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(38.dp)
+                            .testTag("gateway_tab_${tabName.lowercase()}"),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isSelected) tabColor.copy(alpha = 0.2f) else Color.Transparent,
+                            contentColor = if (isSelected) tabColor else MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        elevation = null,
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = tabName.uppercase(),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Content matching the selected mode
+            when (selectedTab) {
+                "Active" -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Agent Core Execution State",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (isAgentActive) "6 Autonomous sub-agents actively executing background tasks" else "Sub-agents paused in idle standby",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = isAgentActive,
+                                onCheckedChange = { spacesViewModel.toggleAgentActive() },
+                                modifier = Modifier.testTag("toggle_agent_active_switch")
+                            )
+                        }
+
+                        // Grid of Active Nodes
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Surface(
+                                modifier = Modifier.weight(1f),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Text("Spaces Online", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("6 / 6 Active", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Color(0xFF00E676))
+                                }
+                            }
+                            Surface(
+                                modifier = Modifier.weight(1f),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Text("Telemetry Link", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("12ms Latency", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                            Surface(
+                                modifier = Modifier.weight(1f),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Text("Authorized By", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("Snehasis", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
+                "Optimize" -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "System Optimization Level",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = optimizationStatus,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Text(
+                                text = "$optimizationScore%",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFF29B6F6)
+                            )
+                        }
+
+                        LinearProgressIndicator(
+                            progress = { optimizationScore / 100f },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp)),
+                            color = Color(0xFF29B6F6),
+                            trackColor = MaterialTheme.colorScheme.surface
+                        )
+
+                        // Optimization metrics list
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Surface(
+                                modifier = Modifier.weight(1f),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Text("SIP Yield Boost", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("+195% Growth", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color(0xFF00E676))
+                                }
+                            }
+                            Surface(
+                                modifier = Modifier.weight(1f),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Text("Expense Burn", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("-38% Burn", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color(0xFFE91E63))
+                                }
+                            }
+                            Surface(
+                                modifier = Modifier.weight(1f),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Text("Threat Latency", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("12ms Instant", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color(0xFF29B6F6))
+                                }
+                            }
+                        }
+
+                        Button(
+                            onClick = { spacesViewModel.runOptimization() },
+                            enabled = !isOptimizing,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
+                                .testTag("run_optimization_button"),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF29B6F6),
+                                contentColor = Color.Black
+                            )
+                        ) {
+                            if (isOptimizing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    color = Color.Black,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("TUNING ALL 6 AGENT SPACES...", fontWeight = FontWeight.Bold)
+                            } else {
+                                Icon(Icons.Filled.AutoFixHigh, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("RUN FULL SYSTEM OPTIMIZER", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+                "Operate" -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = "Direct Operational Commands",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        // 4 One-tap Directive Buttons
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilledTonalButton(
+                                onClick = { spacesViewModel.operateDirective("Execute Cyber Defense Scan", "Code Auto-Defense") },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("directive_defense_scan"),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(Icons.Filled.Shield, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Text("Defense Scan", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            FilledTonalButton(
+                                onClick = { spacesViewModel.operateDirective("Rebalance SIP Investments", "Trading & SIP") },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("directive_sip_rebalance"),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(Icons.Filled.ShowChart, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Text("SIP Rebalance", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilledTonalButton(
+                                onClick = { spacesViewModel.operateDirective("Audit Ledger Balance Sheets", "Accounting") },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("directive_audit_ledger"),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(Icons.Filled.AccountBalance, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Text("Audit Ledger", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            FilledTonalButton(
+                                onClick = { spacesViewModel.operateDirective("Sync E-Commerce Logistics", "E-Commerce") },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("directive_sync_ecommerce"),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(Icons.Filled.Storefront, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Text("Sync Stores", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+
+                        // Launch Level 1 Console
+                        Button(
+                            onClick = onNavigateToChat,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
+                                .testTag("launch_level1_from_deck"),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFFFB300),
+                                contentColor = Color.Black
+                            )
+                        ) {
+                            Icon(Icons.Filled.Mic, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("LAUNCH LEVEL 1 HANDS-FREE VOICE OPERATOR", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+
+            // Real-time operation message footer
+            lastOperationResult?.let { result ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "▶ $result",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun DashboardScreen(
-    spacesViewModel: SpacesViewModel = viewModel()
+    spacesViewModel: SpacesViewModel = viewModel(),
+    onNavigateToChat: () -> Unit = {}
 ) {
     var selectedDomainForDetails by remember { mutableStateOf<DomainStats?>(null) }
     var selectedCategory by remember { mutableStateOf("All") }
@@ -566,6 +973,14 @@ fun DashboardScreen(
                     }
                 }
             }
+        }
+
+        // Active • Optimize • Operate Control Deck
+        item {
+            OmniGatewayOperationsCard(
+                spacesViewModel = spacesViewModel,
+                onNavigateToChat = onNavigateToChat
+            )
         }
 
         // Expanded Interactive Recharts Analytics section

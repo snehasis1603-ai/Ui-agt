@@ -47,7 +47,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         val cleanUser = email.trim()
         val cleanCode = javaPassword.trim()
         if (cleanUser.isBlank() || cleanCode.isBlank()) {
-            _errorMessage.value = "Username and Security Code are required."
+            _errorMessage.value = "Username and Security Code are required to access the OMNI Agent Gateway."
             return
         }
 
@@ -71,31 +71,11 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
 
-            val storedPassword = sharedPrefs.getString("pwd_${cleanUser.lowercase()}", null)
-            if (storedPassword != null) {
-                if (storedPassword == cleanCode) {
-                    sharedPrefs.edit().apply {
-                        putString("email", cleanUser)
-                        putString("token", "omni_auth_session_${System.currentTimeMillis()}")
-                        apply()
-                    }
-                    _userEmail.value = cleanUser
-                    _errorMessage.value = null
-                    _networkErrorDetails.value = null
-                } else {
-                    _errorMessage.value = "Invalid Security Code for $cleanUser. Check security code crafted by owner."
-                }
+            // If username or security code doesn't match the owner-crafted credentials
+            if (!cleanUser.equals(OWNER_USERNAME, ignoreCase = true)) {
+                _errorMessage.value = "Access Denied: Invalid Username. The OMNI Agent Gateway requires the owner username '$OWNER_USERNAME' crafted by the owner."
             } else {
-                // If first time supervisor access with this username, establish deck
-                sharedPrefs.edit().apply {
-                    putString("pwd_${cleanUser.lowercase()}", cleanCode)
-                    putString("email", cleanUser)
-                    putString("token", "omni_auth_session_${System.currentTimeMillis()}")
-                    apply()
-                }
-                _userEmail.value = cleanUser
-                _errorMessage.value = null
-                _networkErrorDetails.value = null
+                _errorMessage.value = "Access Denied: Invalid Security Code. The OMNI Agent Gateway requires the security code '$OWNER_SECURITY_CODE' crafted by the owner."
             }
             _isLoading.value = false
         }
@@ -113,12 +93,9 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun signUp(email: String, javaPassword: String) {
         val cleanEmail = email.trim()
-        if (cleanEmail.isBlank() || javaPassword.isBlank()) {
-            _errorMessage.value = "All fields are required."
-            return
-        }
-        if (javaPassword.length < 6) {
-            _errorMessage.value = "Password must be at least 6 characters."
+        val cleanCode = javaPassword.trim()
+        if (cleanEmail.isBlank() || cleanCode.isBlank()) {
+            _errorMessage.value = "Username and Security Code are required."
             return
         }
 
@@ -127,19 +104,18 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         _networkErrorDetails.value = null
 
         viewModelScope.launch {
-            val existing = sharedPrefs.getString("pwd_${cleanEmail.lowercase()}", null)
-            if (existing != null) {
-                _errorMessage.value = "Account already exists for $cleanEmail. Please sign in with your password."
-            } else {
+            if (cleanEmail.equals(OWNER_USERNAME, ignoreCase = true) && cleanCode == OWNER_SECURITY_CODE) {
                 sharedPrefs.edit().apply {
-                    putString("pwd_${cleanEmail.lowercase()}", javaPassword)
-                    putString("email", cleanEmail)
-                    putString("token", "omni_auth_session_${System.currentTimeMillis()}")
+                    putString("pwd_${OWNER_USERNAME.lowercase()}", OWNER_SECURITY_CODE)
+                    putString("email", OWNER_USERNAME)
+                    putString("token", "omni_owner_deck_${System.currentTimeMillis()}")
                     apply()
                 }
-                _userEmail.value = cleanEmail
+                _userEmail.value = OWNER_USERNAME
                 _errorMessage.value = null
                 _networkErrorDetails.value = null
+            } else {
+                _errorMessage.value = "The OMNI Agent Gateway is restricted. Use the owner credentials crafted by the owner: Username '$OWNER_USERNAME' and Security Code '$OWNER_SECURITY_CODE'."
             }
             _isLoading.value = false
         }

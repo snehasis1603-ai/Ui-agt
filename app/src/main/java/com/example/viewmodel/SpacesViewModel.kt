@@ -21,6 +21,53 @@ class SpacesViewModel(application: Application) : AndroidViewModel(application) 
     private val _selectedDomain = MutableStateFlow("Trading & SIP")
     val selectedDomain: StateFlow<String> = _selectedDomain
 
+    // Agent Activation State
+    private val _isAgentActive = MutableStateFlow(true)
+    val isAgentActive: StateFlow<Boolean> = _isAgentActive
+
+    // Agent Optimization State
+    private val _isOptimizing = MutableStateFlow(false)
+    val isOptimizing: StateFlow<Boolean> = _isOptimizing
+
+    private val _optimizationScore = MutableStateFlow(98)
+    val optimizationScore: StateFlow<Int> = _optimizationScore
+
+    private val _optimizationStatus = MutableStateFlow("System Fully Optimized: All 6 spaces running at peak efficiency")
+    val optimizationStatus: StateFlow<String> = _optimizationStatus
+
+    // Last operation message
+    private val _lastOperationResult = MutableStateFlow<String?>("Gateway Ready: Armed for Owner Snehasis")
+    val lastOperationResult: StateFlow<String?> = _lastOperationResult
+
+    fun toggleAgentActive() {
+        val newState = !_isAgentActive.value
+        _isAgentActive.value = newState
+        val logMsg = if (newState) "OMNI Agent Master Core ACTIVATED by Owner Snehasis" else "OMNI Agent switched to STANDBY by Owner Snehasis"
+        saveVoiceLog(selectedDomain.value, logMsg, isVoice = false)
+        _lastOperationResult.value = if (newState) "Agent is now ACTIVE and monitoring." else "Agent is now in STANDBY."
+    }
+
+    fun runOptimization() {
+        if (_isOptimizing.value) return
+        viewModelScope.launch {
+            _isOptimizing.value = true
+            _optimizationStatus.value = "Optimizing neural routing, SIP portfolios, and cyber defense..."
+            kotlinx.coroutines.delay(1200)
+            _optimizationScore.value = 99
+            _optimizationStatus.value = "Peak Optimization Achieved: +195% SIP projection, -38% burn rate, 12ms latency"
+            saveVoiceLog(selectedDomain.value, "Optimization Pass Completed: All 6 agent spaces tuned to 99% peak efficiency", isVoice = false)
+            _lastOperationResult.value = "Optimization complete: 6/6 spaces tuned."
+            _isOptimizing.value = false
+        }
+    }
+
+    fun operateDirective(actionName: String, domainTitle: String) {
+        viewModelScope.launch {
+            saveVoiceLog(domainTitle, "OPERATIONAL DIRECTIVE: $actionName executed by Owner Snehasis", isVoice = false)
+            _lastOperationResult.value = "Directive executed: $actionName in [$domainTitle]"
+        }
+    }
+
     fun selectDomain(domainTitle: String) {
         _selectedDomain.value = domainTitle
     }

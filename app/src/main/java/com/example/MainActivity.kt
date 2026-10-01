@@ -142,7 +142,19 @@ fun OmniAgentApp(
                 startDestination = "dashboard",
                 modifier = Modifier.padding(innerPadding)
             ) {
-                composable("dashboard") { DashboardScreen() }
+                composable("dashboard") {
+                    DashboardScreen(
+                        onNavigateToChat = {
+                            navController.navigate("chat") {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
                 composable("chat") { MasterAgentScreen() }
             }
         }
