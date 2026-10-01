@@ -1,0 +1,6 @@
+{
+  "name": "OmniAgent Manager",
+  "description": "Enterprise-grade AI Agent dashboard for comprehensive automated day-to-day work, accounting, and multi-domain analysis via specialized AI agents.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
